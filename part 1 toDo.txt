@@ -1,0 +1,28 @@
+When users first arrive at your site they should be directed to a page that 
+explains the issue and presents a form to sign. The form should have four 
+elements: two text fields for first and last name, a hidden field for the 
+signature, and a submit button. There should also be a <canvas> element 
+on which users can draw their signature.
+
+
+Route: 
+
+    ("/")   GET - If signedCookie = true, redirect to ("/signed"); 
+                otherwise:
+                Explains the petition and presents the form.
+                form: 2 text fields (first and last name), 1 hidden field to send the signature and a submit button. 
+                Should also have a canvas for drawing signature. Should also have a timestamp (?)
+
+    ("/")   POST - Receive the form data and save into a 'Database Table' named 'signatures' with these columns:
+                -   id (primary)
+                -   first name
+                -   last name
+                -   signature (dataToUrl and should be VARCHAR)
+
+            All 4 fields are required. If not all sent OR some error, show the page again with an error message
+
+            If success, set a cookie (signedCookie) to remember that and redirect to ("/signed")
+
+    ("/signed") GET 
+                If signedCookie = true, show a thank you page with the name of everyone the signed it;
+                    otherwise: redirect to ("/")
