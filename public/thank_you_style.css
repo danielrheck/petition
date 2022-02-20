@@ -1,0 +1,57 @@
+body {
+    background-color: #ffe2bd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.signersPageWrap {
+    display: flexbox;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.signedText {
+    position: relative;
+    bottom: 18vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+a,
+.signer {
+    display: block;
+    text-align: center;
+}
+
+.thankYou {
+    position: relative;
+    bottom: 14vh;
+    font-size: 26px;
+}
+.sigContainer {
+    display: flex;
+    justify-content: center;
+}
+
+.signatureIMG {
+    background-color: rgb(255, 251, 240);
+    position: relative;
+    bottom: 20vh;
+    padding: 15px;
+    border: 2px solid black;
+}
+
+.signedH1 {
+    position: relative;
+    bottom: 10vh;
+    font-size: 45px;
+}
+
+.listLink {
+    position: relative;
+    bottom: 8vh;
+    font-size: 28px;
+}

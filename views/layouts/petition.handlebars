@@ -1,0 +1,54 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>sdasdasd</title>
+        <link rel="stylesheet" href="petition_style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Jura:wght@300&family=Titillium+Web:wght@200;400&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+
+    <body>
+
+        <img src="pasta-draw.png" class="pasta-draw" alt="" srcset="">
+        <h1 class="petitionH1">Are you tired of ordering Carbonara pasta and
+            getting something else?</h1>
+
+        <p class="petitionText">This is a petition to stop merciless people from putting cream on their so called Carbonara.
+            You need only <b>five</b> ingredients and cream <b>is NOT one of them</b>.
+        </p>
+
+        <div class="formContainer">
+            <form method="POST" class="petitionForm">
+                <label class="firstName">
+                    First Name:
+                    <input type="text" name="First Name" />
+                </label>
+                <label class="lastName">
+                    Last Name:
+                    <input type="text" name="Last Name" />
+                </label>
+                <input type="hidden" name="Signature" class="signature" />
+                <div class="canvasWrapper">
+                    <canvas
+                        id="canvasSignature"
+                        class="stickCanvas"
+                        width="320"
+                        height="40"
+                    ></canvas>
+                </div>
+                <button type="submit">Sign petition! ✍</button>
+                {{> invalidData}}
+                {{> dbError}}
+            </form>
+        </div>
+
+        <script src="signature.js"></script>
+    </body>
+
+</html>

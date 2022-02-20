@@ -2,6 +2,7 @@ let canvas = document.getElementById("canvasSignature");
 var ctx = canvas.getContext("2d");
 ctx.strokeStyle = "black";
 ctx.lineWidth = 2;
+let signed = false;
 
 function trigger(e) {
     canvas.addEventListener("mousemove", actualDraw);
@@ -9,8 +10,9 @@ function trigger(e) {
 }
 
 function actualDraw(e) {
+    signed = true;
+    console.log("draw");
     ctx.beginPath();
-
     console.log(xY[0], xY[1]);
     ctx.moveTo(xY[0], xY[1]);
     ctx.lineCap = "round";
@@ -29,9 +31,17 @@ function stopDraw() {
 }
 
 function saveUrl() {
-    document
-        .getElementsByClassName("signature")[0]
-        .setAttribute("value", canvas.toDataURL());
+    if (!signed) {
+        console.log("not signed");
+        document
+            .getElementsByClassName("signature")[0]
+            .setAttribute("value", "");
+    } else {
+        console.log("signed");
+        document
+            .getElementsByClassName("signature")[0]
+            .setAttribute("value", canvas.toDataURL());
+    }
 }
 
 let xY = [0, 0];

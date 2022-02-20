@@ -1,0 +1,66 @@
+body {
+    background-color: #ffe2bd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5vh;
+    margin-bottom: 15vh;
+}
+
+.signersPageWrap {
+    display: flexbox;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.signedText {
+    position: relative;
+    bottom: 5vh;
+    font-size: 5vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+.signer {
+    display: block;
+    text-align: center;
+}
+
+.pastaBox {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.pasta-draw {
+    width: 15vw;
+    position: relative;
+    top: 3.5vh;
+}
+
+.thankYou {
+    font-size: 4vh;
+}
+
+.signersContainer {
+    position: relative;
+    top: 10vh;
+    margin-bottom: 10px;
+}
+
+.heresEveryone {
+    position: relative;
+    top: 7vh;
+    font-size: 3vh;
+}
+
+p.signer {
+    font-size: 20px;
+    padding-bottom: 2px;
+}
+
+.padContainer {
+    margin-bottom: 20px;
+}

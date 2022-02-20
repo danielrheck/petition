@@ -1,0 +1,37 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="signed_style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Jura:wght@300&family=Titillium+Web:wght@200;400&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+
+        <div class="signersPageWrap">
+            <div class="signedText"><h1 class="signedh1">We thank and also
+                    congratulate you for joining this urgent fight.</h1></div>
+
+            <h3 class="thankYou">We really aprecciatte it. Let's keep humans
+                safe from that creamy monstruosity.</h3>
+            <div class="pastaBox">
+                <img src="pasta-draw.png" class="pasta-draw" alt="" /></div>
+
+            <h4 class="heresEveryone">Here's everyone that signed it so far. You
+                guys are the real heroes here!</h4>
+
+            <div class="signersContainer">
+                {{#allSigners}}
+                    <p class="signer">{{firstname}} {{lastname}}</p>
+                    <div class="padContainer"></div>
+                {{/allSigners}}
+            </div>
+        </div>
+    </body>
+</html>
