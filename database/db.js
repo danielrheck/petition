@@ -1,9 +1,22 @@
 const spicedPg = require("spiced-pg");
-
 const db = spicedPg("postgres:postgres:postgres@localhost:5432/signatures");
+const bcrypt = require("bcryptjs");
 
-module.exports.dataValidation = function (firstname, lastname, signature) {
-    if (!firstname || !lastname || !signature) {
+exports.hash = (password) => {
+    return bcrypt.genSalt().then((salt) => {
+        return bcrypt.hash(password, salt);
+    });
+};
+
+exports.compare = bcrypt.compare;
+
+module.exports.dataValidation = function (
+    firstname,
+    lastname,
+    email,
+    password
+) {
+    if (!firstname || !lastname || !email || !password) {
         return false;
     } else {
         return true;
@@ -14,20 +27,59 @@ module.exports.getAllSignatures = function () {
     return db.query(`SELECT firstname, lastname FROM signatures`);
 };
 
-module.exports.addSignature = function (firstname, lastname, signature) {
+module.exports.addUsername = function (firstname, lastname, email, password) {
     return db.query(
         `
-    INSERT INTO signatures(firstname, lastname, signature)
-    VALUES($1, $2, $3)
+    INSERT INTO users(firstname, lastname, email, password)
+    VALUES($1, $2, $3, $4)
     RETURNING id
     `,
-        [firstname, lastname, signature]
+        [firstname, lastname, email, password]
     );
 };
 
-module.exports.getSignatureById = function (id) {
-    return db.query(`SELECT signature FROM signatures WHERE id = $1`, [id]);
+module.exports.addSignature = function (user_id, signature) {
+    return db.query(
+        `
+    INSERT INTO signatures(user_id, signature)
+    VALUES($1, $2)
+    RETURNING user_id
+    `,
+        [user_id, signature]
+    );
 };
+
+module.exports.getSignatureById = function (user_id) {
+    return db.query(`SELECT signature FROM signatures WHERE user_id = $1`, [
+        user_id,
+    ]);
+};
+
+module.exports.getPasswordAndIdByEmail = function (email) {
+    return db.query(`SELECT password, id FROM users WHERE email = $1`, [email]);
+};
+
+module.exports.checkSignature = function (id) {
+    return db.query(
+        `
+            SELECT signature FROM signatures WHERE id = $1
+    `,
+        [id]
+    );
+};
+
+// var checkSignature = function (id) {
+//     return db.query(
+//         `
+//             SELECT signature FROM signatures WHERE id = $1
+//     `,
+//         [id]
+//     );
+// };
+
+// checkSignature(1).then(({ rows }) => {
+//     console.log(rows[0]);
+// });
 
 // var getAllSignatures = function () {
 //     return db.query(
@@ -84,3 +136,85 @@ module.exports.getSignatureById = function (id) {
 // function() {
 //     console.log()
 // }
+
+// var hash = (password) => {
+//     return bcrypt.genSalt().then((salt) => {
+//         return bcrypt.hash(password, salt);
+//     });
+// };
+
+// var hash = (password) => {
+//     return bcrypt
+//         .genSalt()
+//         .then((salt) => {
+//             return bcrypt.hash(password, salt);
+//         })
+//         .then((hashed) => {
+//             return hashed;
+//         });
+// };
+
+// hash("123456");
+
+// bcrypt
+//     .compare(
+//         "123456",
+//         "$2a$10$vvYP655qVPMiFVoUfnjczuBuyrlFtJuOUHj5ckTC/xumyyayOo9Lu"
+//     )
+//     .then((check) => {
+//         console.log(check);
+//     });
+
+// var getSignatureById = function (user_id) {
+//     return db.query(`SELECT signature FROM signatures WHERE user_id = $1`, [
+//         user_id,
+//     ]);
+// };
+
+// getSignatureById(15).then(({ rows }) => {
+//     console.log(rows[0].signature);
+// });
+
+// var getPasswordByEmail = function (email) {
+//     return db.query(`SELECT password FROM users WHERE email = $1`, [email]);
+// };
+
+// getPasswordByEmail("danielrheck@gmail.com").then(({ rows }) => {
+//     return console.log(rows[0].password);
+// });
+
+// let getPasswordAnIdByEmail = function (email) {
+//     return db.query(`SELECT password, id FROM users WHERE email = $1`, [email]);
+// };
+
+// getPasswordAnIdByEmail("danielrheck@gmail.com").then(({ rows }) => {
+//     console.log(rows[0]);
+// });
+
+// var checkReturnSignature = function (id) {
+//     return db.query(
+//         `
+//             SELECT signature FROM signatures WHERE id = $1
+//     `,
+//         [id]
+//     );
+// };
+
+// var returnAs = function () {
+//     checkReturnSignature(1)
+//         .then(({ rows }) => {
+//             if (rows[0].signature) {
+//                 console.log(rows[0].signature);
+//                 return rows[0].signature;
+//             } else {
+//                 return false;
+//             }
+//         })
+//         .catch(() => {
+//             return false;
+//         });
+// };
+
+// let returned = returnAs(1);
+
+// console.log(returned);
