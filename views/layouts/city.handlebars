@@ -23,30 +23,21 @@
             <div class="pastaBox">
                 <img src="../pasta-draw.png" class="pasta-draw" alt="" /></div>
 
-            <h4 class="heresEveryone">Here's everyone that signed it so far. You
-                guys are the real heroes here!</h4>
+            <h4 class="heresEveryone">Here's everyone that signed in
+                {{city}}
+                it so far. You guys are the real heroes here!</h4>
 
             <div class="signersContainer">
                 {{#allSigners}}
                     {{#if url}}
-                        <p class="signer">
+                        <div class="signer">
                             <a href={{url}}>{{firstname}}
-                                {{lastname}}{{#if age}}, {{age}}{{/if}}</a>{{#if
-                                city
-                            }}
-                                -
-                                <a
-                                    href="/signed/{{city}}"
-                                >{{city}}</a>{{/if}}</p>
+                                {{lastname}}{{#if age}},
+                                    {{age}}{{/if}}</a></div>
                     {{else}}
                         <p class="signer">{{firstname}}
-                            {{lastname}}{{#if age}}, {{age}}{{/if}}{{#if city}}
-                                -
-                                <a
-                                    href="/signed/{{city}}"
-                                >{{city}}</a>{{/if}}</p>
+                            {{lastname}}{{#if age}}, {{age}}{{/if}}</p>
                     {{/if}}
-                    <div class="padContainer"></div>
                 {{/allSigners}}
             </div>
         </div>

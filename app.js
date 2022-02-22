@@ -9,9 +9,11 @@ const {
     addSignature,
     dataValidation,
     getAllSignatures,
-    getSignatureById,
     getPasswordAndIdByEmail,
     checkSignature,
+    checkProfile,
+    addUserProfile,
+    getSignaturesByCity,
 } = require("./database/db");
 // brcrypt
 const { compare, hash } = require("./database/db");
@@ -69,7 +71,6 @@ app.get("/petition", (req, res) => {
 // POST '/'
 // receives the form data
 app.post("/petition", (req, res) => {
-    console.log("post to /petition");
     // checks for the data validity
     if (req.body.Signature == "") {
         // if not valid, show form again with invalid data message
@@ -79,6 +80,7 @@ app.post("/petition", (req, res) => {
         addSignature(req.session.id, req.body.Signature)
             // if succeded redirect to '/thankyou'
             .then(() => {
+                req.session.signed = true;
                 return res.redirect(`/thankyou`);
             })
             // if not, show the petition form again with a message that something went wrong
@@ -92,8 +94,39 @@ app.post("/petition", (req, res) => {
     }
 });
 
+app.get("/profile", (req, res) => {
+    if (!req.session.id) {
+        return res.redirect("/login");
+    } else {
+        checkProfile(req.session.id).then(({ rows }) => {
+            if (rows[0]) {
+                return res.redirect("/");
+            } else {
+                return res.render("main", { layout: "profile" });
+            }
+        });
+    }
+});
+
+app.post("/profile", (req, res) => {
+    let user_id = req.session.id;
+    let { age, city, url } = req.body;
+    if (!user_id && !age && !city && !url) {
+        res.redirect("/thankyou");
+    } else {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            addUserProfile(user_id, age, city, url).then(() => {
+                return res.redirect("/thankyou");
+            });
+        } else {
+            addUserProfile(user_id, age, city, "").then(() => {
+                return res.redirect("/thankyou");
+            });
+        }
+    }
+});
+
 app.get("/thankyou", (req, res) => {
-    console.log(req.session.id);
     // check for id, if not found, redirect to te petition route ('/')
     if (!req.session.id) {
         return res.redirect("/");
@@ -112,18 +145,6 @@ app.get("/thankyou", (req, res) => {
                 return res.redirect("/petition");
             }
         });
-
-        //  query DB for this id's signature
-        // getSignatureById(id)
-        //     // when query is done, send the signature URL to render on the thankYou layout
-        //     .then(({ rows }) => {
-        //         console.log(rows);
-        //         var signature = rows[0].signature;
-        //         return res.render("main", {
-        //             layout: "thankyou",
-        //             signature: signature,
-        //         });
-        //     });
     }
 });
 
@@ -145,13 +166,31 @@ app.get("/signed", (req, res) => {
     }
 });
 
+app.get("/signed/:city", (req, res) => {
+    // check for id, if not found, redirect to te petition route ('/')
+    if (!req.session.id) {
+        return res.redirect("/");
+    }
+    // if found, querry the DB for all signatures and send it to the signed layout
+    else {
+        getSignaturesByCity(req.params.city).then(({ rows }) => {
+            let allSigners = rows;
+
+            return res.render("main", {
+                layout: "city",
+                allSigners: allSigners,
+                city: req.params.city,
+            });
+        });
+    }
+});
+
 app.get("/register", (req, res) => {
     req.session = null;
     return res.render("main", { layout: "register" });
 });
 
 app.post("/register", (req, res) => {
-    console.log(req.body);
     let { firstname, lastname, email, password } = req.body;
     if (dataValidation(firstname, lastname, email, password)) {
         hash(password)
@@ -161,10 +200,13 @@ app.post("/register", (req, res) => {
                         let user_id = rows[0].id;
                         req.session.id = user_id;
                         console.log("Register Success, user_id :  ", user_id);
-                        return res.redirect("/");
+                        return res.redirect("/profile");
                     })
-                    .catch((e) => {
-                        console.log("Error registering: ", e);
+                    .catch(() => {
+                        res.render("main", {
+                            layout: "register",
+                            checkData: true,
+                        });
                     });
                 // save the data in the DB,  then redirect to '/'
             })

@@ -23,10 +23,6 @@ module.exports.dataValidation = function (
     }
 };
 
-module.exports.getAllSignatures = function () {
-    return db.query(`SELECT firstname, lastname FROM signatures`);
-};
-
 module.exports.addUsername = function (firstname, lastname, email, password) {
     return db.query(
         `
@@ -36,6 +32,37 @@ module.exports.addUsername = function (firstname, lastname, email, password) {
     `,
         [firstname, lastname, email, password]
     );
+};
+
+module.exports.addUserProfile = function (user_id, age, city, url) {
+    return db.query(
+        `
+    INSERT INTO user_profiles(user_id, age, city, url)
+    VALUES($1, $2, $3, $4)
+    `,
+        [user_id, age, city, url]
+    );
+};
+
+module.exports.checkProfile = function (user_id) {
+    return db.query(
+        `
+        SELECT * FROM user_profiles WHERE user_id = $1
+        `,
+        [user_id]
+    );
+};
+
+module.exports.profileValidation = function (user_id, age, city, url) {
+    if (!user_id && !age && !city && !url) {
+        return false;
+    } else {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 };
 
 module.exports.addSignature = function (user_id, signature) {
@@ -59,14 +86,81 @@ module.exports.getPasswordAndIdByEmail = function (email) {
     return db.query(`SELECT password, id FROM users WHERE email = $1`, [email]);
 };
 
-module.exports.checkSignature = function (id) {
+module.exports.checkSignature = function (user_id) {
     return db.query(
         `
-            SELECT signature FROM signatures WHERE id = $1
+            SELECT signature FROM signatures WHERE user_id = $1
     `,
-        [id]
+        [user_id]
     );
 };
+
+module.exports.getAllSignatures = function () {
+    return db.query(
+        `
+    SELECT firstname, lastname, age, city, url 
+FROM users
+INNER JOIN signatures 
+ON users.id = signatures.user_id
+FULL OUTER JOIN user_profiles 
+ON users.id = user_profiles.user_id
+    `
+    );
+};
+
+module.exports.getSignaturesByCity = function (city) {
+    return db.query(
+        `
+            SELECT firstname, lastname, age, city, url 
+FROM users
+INNER JOIN signatures 
+ON users.id = signatures.user_id
+FULL OUTER JOIN user_profiles 
+ON users.id = user_profiles.user_id
+WHERE LOWER(city) = LOWER($1)
+
+
+        `,
+        [city]
+    );
+};
+
+// var getSignaturesByCity = function (city) {
+//     city;
+//     return db.query(
+//         `
+//             SELECT firstname, lastname, age, city, url
+// FROM users
+// INNER JOIN signatures
+// ON users.id = signatures.user_id
+// FULL OUTER JOIN user_profiles
+// ON users.id = user_profiles.user_id
+// WHERE LOWER(city) = LOWER($1)
+
+//         `,
+//         [city]
+//     );
+// };
+
+// getSignaturesByCity("Sao Paulo").then(({ rows }) => {
+//     console.log(rows);
+// });
+// var getAllSignatures = function () {
+//     return db.query(
+//         `
+//     SELECT firstname, lastname, age, city, url
+// FROM users
+// INNER JOIN signatures
+// ON users.id = signatures.user_id
+// FULL OUTER JOIN user_profiles
+// ON users.id = user_profiles.user_id
+//     `
+//     );
+// };
+
+// getAllSignatures().then(({ rows }) => {
+//     console.log(rows);
+// });
 
 // var checkSignature = function (id) {
 //     return db.query(

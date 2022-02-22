@@ -4,7 +4,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>sdasdasd</title>
-        <link rel="stylesheet" href="register_style.css" />
+        <link rel="stylesheet" href="profile_style.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -16,36 +16,28 @@
     <body>
 
         <img src="pasta-draw.png" class="pasta-draw" alt="" srcset="" />
-        <h1 class="petitionH1">Are you tired of ordering Carbonara pasta and
-            getting something else?</h1>
 
-        <p class="petitionText">Register below and sign this petition. Let's together make a safer world for us all!</b>.
+
+        <p class="petitionText">Tell us more about yourself...</b>.
         </p>
 
         <div class="formContainer">
             <form method="POST" class="petitionForm">
-                <label class="firstName">
-                    First Name:
-                    <input type="text" name="firstname" />
+                <label class="age">
+                    Age:
+                    <input type="text" name="age" />
                 </label>
-                <label class="lastName">
-                    Last Name:
-                    <input type="text" name="lastname" />
+                <label class="city">
+                    City:
+                    <input type="text" name="city" />
                 </label>
                 <label class="email">
-                    E-Mail:
-                    <input type="text" name="email" />
+                    Homepage:
+                    <input type="text" name="url" />
                 </label>
-                <label class="password">
-                    Password:
-                    <input type="password" name="password" />
-                </label>
+               
 
                     <button type="submit">Register!</button>
-                    
-                    {{#if checkData}}
-                    <div class="checkData">Please check your data...</div>
-                    {{/if}}
                 </div>
                 
 

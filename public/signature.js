@@ -48,5 +48,6 @@ let xY = [0, 0];
 
 canvas.addEventListener("mousedown", trigger);
 
+document.addEventListener("mouseup", stopDraw);
 canvas.addEventListener("mouseup", stopDraw);
 canvas.addEventListener("mouseup", saveUrl);
