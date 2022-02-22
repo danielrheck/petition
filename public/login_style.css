@@ -75,3 +75,8 @@ a {
     position: relative;
     top: 1vh;
 }
+
+.error {
+    color: red;
+    position: relative;
+}

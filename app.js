@@ -1,9 +1,10 @@
+// ===== MODULES ===== //
 const express = require("express");
 const helmet = require("helmet");
 const { engine } = require("express-handlebars");
 const cookieSession = require("cookie-session");
 const path = require("path");
-// DB functions
+// DB FUNCTIONS
 const {
     addUsername,
     addSignature,
@@ -15,20 +16,23 @@ const {
     addUserProfile,
     getSignaturesByCity,
 } = require("./database/db");
-// brcrypt
+// BCRYPT
 const { compare, hash } = require("./database/db");
+// ===== MODULES ===== //
+
+// ===== SERVER ===== //
 const app = express();
 const port = 8080;
-
 app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
+// ===== SERVER ===== //
 
-// MIDDLEWARES
+// ===== MIDDLEWARES ===== //
 // HELMET - VULNERABILITIES
 app.use(helmet());
-// Serving public folder
+// SERVING PUBLIC
 app.use(express.static(path.join(__dirname, "/public")));
-// URL body decoder
+// URL BODYPARSERS
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // COOKIE SESSION
@@ -39,51 +43,58 @@ app.use(
         maxAge: 14 * 24 * 60 * 60 * 1000,
     })
 );
+// ===== MIDDLEWARES ===== //
 
-// ROUTES
-
+// ===== ROUTES ===== //
+//
 // GET '/'
 app.get("/", (req, res) => {
+    // IF NOT LOGGED IN, REDIRECT TO '/LOGIN'
     if (!req.session.id) {
         return res.redirect("/login");
-    } else {
+    }
+    // IF LOGGED, REDIRECT TO '/PETITION'
+    else {
         return res.redirect("/petition");
-        // check session cookie
-        // signed > thank you
     }
 });
-
+//
+//
+// GET '/PETITION'
 app.get("/petition", (req, res) => {
+    // IF NOT LOGGED IN, REDIRECT TO '/'
     if (!req.session.id) {
-        return res.redirect("/login");
-    } else {
-        checkSignature(req.session.id).then(({ rows }) => {
-            if (rows[0]) {
-                req.session.signed = true;
-                return res.redirect("/thankyou");
-            } else {
-                return res.render("main", { layout: "petition" });
-            }
-        });
+        return res.redirect("/");
+    }
+    // IF LOGGED, CHECK IS USER SIGNED ALREADY
+    else {
+        // IF USER HAS SIGNED, REDIRECT TO '/THANKYOU
+        if (req.session.signed) {
+            return res.redirect("/thankyou");
+        }
+        // IF USER HAS NOT SIGNED, PRESENT THE PETITION FOR THE USER TO SIGN
+        else {
+            return res.render("main", { layout: "petition" });
+        }
     }
 });
-
-// POST '/'
-// receives the form data
+//
+//
+// POST '/PETITION'
 app.post("/petition", (req, res) => {
-    // checks for the data validity
+    // RECEIVES THE FORM DATA AND CHECK IF USER SIGNED
     if (req.body.Signature == "") {
-        // if not valid, show form again with invalid data message
+        // IF SIGNATURE IS EMPTY, SEND THE FORM BACK WITH MESSAGE ERROR
         return res.render("main", { layout: "petition", invalid: true });
     } else {
-        // if valid, add to the DB
+        // IF THE USER SIGNED, ADD THE SIGNATURE TO THE SINATURES TABLE
         addSignature(req.session.id, req.body.Signature)
-            // if succeded redirect to '/thankyou'
+            // IF ADDED SUCCESSFULLY, SET SIGNED COOKIE TO TRUE REDIRECT TO 'THANKYOU'
             .then(() => {
                 req.session.signed = true;
                 return res.redirect(`/thankyou`);
             })
-            // if not, show the petition form again with a message that something went wrong
+            // IF NOT, SEND THE PETITION AGAIN WITH AN ERROR MESSAGE
             .catch((e) => {
                 console.log("Error inserting in the DB:  ", e);
                 return res.render("main", {
@@ -93,165 +104,276 @@ app.post("/petition", (req, res) => {
             });
     }
 });
-
+//
+//
+// GET '/PROFILE'
 app.get("/profile", (req, res) => {
+    // IF NOT LOGGED IN, REDIRECT TO '/'
     if (!req.session.id) {
-        return res.redirect("/login");
-    } else {
+        return res.redirect("/");
+    }
+    // IF LOGGED IN, CHECK IF PROFILE WAS SENT ALREADY
+    else {
         checkProfile(req.session.id).then(({ rows }) => {
+            // IF WAS SENT, REDIRECT TO '/'
             if (rows[0]) {
                 return res.redirect("/");
-            } else {
+            }
+            // IF USER DIDN'T SEND IT, PRESENT THE PROFILE FORM
+            else {
                 return res.render("main", { layout: "profile" });
             }
         });
     }
 });
-
+//
+//
+// POST '/PROFILE'
 app.post("/profile", (req, res) => {
     let user_id = req.session.id;
     let { age, city, url } = req.body;
+    // IF ALL FIELDS ARE LEFT BLANK, REDIRECT TO '/PETITION'
     if (!user_id && !age && !city && !url) {
-        res.redirect("/thankyou");
-    } else {
+        res.redirect("/petition");
+    }
+    // IF THERE IS SOMETHING IN THE FORM RESPONSE
+    else {
+        // CHECK IF URL STARTS WITH 'HTTPS' OR 'HTTP'
         if (url.startsWith("http://") || url.startsWith("https://")) {
-            addUserProfile(user_id, age, city, url).then(() => {
-                return res.redirect("/thankyou");
-            });
+            // IF STARTS, ADD IT TO THE DB
+            addUserProfile(user_id, age, city, url)
+                // IF ADDED SUCCESSFULLY, REDIRECT TO '/THANKYOU'
+                .then(() => {
+                    return res.redirect("/thankyou");
+                })
+                // IF ERROR, RE-RENDER THE FORM WITH A MESSAGE OF ERROR (+++MESSAGE STILL TO IMPLEMENT+++)
+                .catch(() => {
+                    return res.render("main", {
+                        layout: "profile",
+                        oops: true,
+                    });
+                });
         } else {
+            // IF URL DOESNT START WITH 'HTTPS' OR 'HTTP', ADD TO THE DATABASE WITH AN EMPTY URL REPLACING IT
             addUserProfile(user_id, age, city, "").then(() => {
                 return res.redirect("/thankyou");
             });
         }
     }
 });
-
+//
+//
+// GET '/THANKYOU'
 app.get("/thankyou", (req, res) => {
-    // check for id, if not found, redirect to te petition route ('/')
+    // IF NOT LOGGED IN, REDIRECT TO '/'
     if (!req.session.id) {
         return res.redirect("/");
     }
-    // if id is found;
+    // IF LOGGED IN
     else {
         let id = req.session.id;
+        // CHECK IF USER SIGNED ALREADY
         checkSignature(id).then(({ rows }) => {
-            if (rows[0]) {
+            // IF SIGNED, RENDER THE THANKYOU PAGE PASSING THE SIGNATURE
+            if (req.session.signed) {
                 var signature = rows[0].signature;
                 return res.render("main", {
                     layout: "thankyou",
                     signature: signature,
                 });
-            } else {
+            }
+            // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
+            else {
                 return res.redirect("/petition");
             }
         });
     }
 });
-
+//
+//
+// GET '/SIGNED'
 app.get("/signed", (req, res) => {
-    // check for id, if not found, redirect to te petition route ('/')
+    // IF NOT LOGGED IN, REDIRECT TO '/'
     if (!req.session.id) {
         return res.redirect("/");
     }
-    // if found, querry the DB for all signatures and send it to the signed layout
+    // IF LOGGED IN, CHECK SIGNATURE
     else {
-        getAllSignatures().then(({ rows }) => {
-            let allSigners = rows;
-
-            return res.render("main", {
-                layout: "signed",
-                allSigners: allSigners,
+        // IF SIGNED, RENDER THE SIGNED PAGE PASSING ALL SIGNERS
+        if (req.session.signed) {
+            getAllSignatures().then(({ rows }) => {
+                let allSigners = rows;
+                return res.render("main", {
+                    layout: "signed",
+                    allSigners: allSigners,
+                });
             });
-        });
+        }
+        // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
+        else {
+            return res.redirect("/petition");
+        }
     }
 });
-
+//
+//
+// GET TO '/SIGNED/:CITY'
 app.get("/signed/:city", (req, res) => {
-    // check for id, if not found, redirect to te petition route ('/')
+    // IF NOT LOGGED IN, REDIRECT TO '/'
     if (!req.session.id) {
         return res.redirect("/");
     }
-    // if found, querry the DB for all signatures and send it to the signed layout
+    // IF LOGGED IN, CHECK SIGNATURE
     else {
-        getSignaturesByCity(req.params.city).then(({ rows }) => {
-            let allSigners = rows;
-
-            return res.render("main", {
-                layout: "city",
-                allSigners: allSigners,
-                city: req.params.city,
+        // IF SIGNED, RENDER THE THANKYOU PAGE PASSING THE SIGNERS LIST FOR THE CITY
+        if (req.session.signed) {
+            getSignaturesByCity(req.params.city).then(({ rows }) => {
+                let allSigners = rows;
+                return res.render("main", {
+                    layout: "city",
+                    allSigners: allSigners,
+                    city: req.params.city,
+                });
             });
-        });
+        }
+        // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
+        else {
+            return res.redirect("/petition");
+        }
     }
 });
-
+//
+//
+// GET TO '/REGISTER'
 app.get("/register", (req, res) => {
+    // CLEAN COOKIES
     req.session = null;
+    // RENDER REGISTER PAGE
     return res.render("main", { layout: "register" });
 });
-
+//
+//
+// POST TO '/REGISTER'
 app.post("/register", (req, res) => {
     let { firstname, lastname, email, password } = req.body;
+    // CHECK IF ALL FIELDS WERE SENT
     if (dataValidation(firstname, lastname, email, password)) {
+        // IF SO, HASH THE PASSWORD
         hash(password)
             .then((hashedPassword) => {
+                // THEN ADD USER TO USERS DB
                 addUsername(firstname, lastname, email, hashedPassword)
+                    // THE REDIRECT TO PROFILE PAGE
                     .then(({ rows }) => {
                         let user_id = rows[0].id;
                         req.session.id = user_id;
-                        console.log("Register Success, user_id :  ", user_id);
                         return res.redirect("/profile");
                     })
+                    // IF ERROR ADDING TO DB, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
                     .catch(() => {
-                        res.render("main", {
+                        return res.render("main", {
                             layout: "register",
                             checkData: true,
                         });
                     });
-                // save the data in the DB,  then redirect to '/'
             })
-            .catch((e) => {
-                console.log("Error: ", e);
-                // render the page again with an appropriate error message
+            // IF ERROR HASHING, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
+            .catch(() => {
+                return res.render("main", {
+                    layout: "register",
+                    checkData: true,
+                });
             });
+    } else {
+        // IF DATA INVALID, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
+        res.render("main", {
+            layout: "register",
+            checkData: true,
+        });
     }
 });
-
+//
+//
+// GET '/LOGIN'
 app.get("/login", (req, res) => {
+    // IF USER IS LOGGED IN, REDIRECT TO '/'
     if (req.session.id) {
         return res.redirect("/");
     }
-    return res.render("main", { layout: "login" });
+    // IF IS NOT LOGGED IN, RENDER LOGIN PAGE
+    else {
+        return res.render("main", { layout: "login" });
+    }
 });
-
+//
+//
+// POST '/LOGIN'
 app.post("/login", (req, res) => {
-    getPasswordAndIdByEmail(req.body.email).then(({ rows }) => {
-        if (rows[0]) {
-            let id = rows[0].id;
-            compare(req.body.password, rows[0].password)
-                .then((check) => {
-                    if (check) {
-                        //login
-                        req.session.id = id;
-                        res.redirect("/");
-                    } else {
-                        return res.send("wrong credentials");
-                    }
-                })
-                .catch((e) => {
-                    console.log("Error comparing hash:  ", e);
-                    return res.redirect("/");
-                    // render the page again with an error message
+    // GET THE HASHED PASSWORD AND ID BY EMAIL
+    getPasswordAndIdByEmail(req.body.email)
+        .then(({ rows }) => {
+            // IF EMAIL REGISTERED, SET ID TO THE ONE RETURNED FROM THE QUERY
+            if (rows[0]) {
+                let id = rows[0].id;
+                // COMPARE HASH WITH PROVIDED PASSWORD
+                compare(req.body.password, rows[0].password)
+                    .then((check) => {
+                        // IF PASSWORD IS CORRECT, SET COOKIE WITH THE ID
+                        if (check) {
+                            req.session.id = id;
+                            // CHECK USER SIGNED
+                            checkSignature(id).then(({ rows }) => {
+                                // IF SO, SET SIGNED COOKIE TO TRUE
+                                if (rows[0]) {
+                                    req.session.signed = true;
+                                }
+                            });
+                            // REDIRECT TO '/'
+                            res.redirect("/");
+                        }
+                        // IF PASSWORD IS INCORRECT, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
+                        else {
+                            return res.render("main", {
+                                layout: "login",
+                                checkData: true,
+                            });
+                        }
+                    })
+                    // IF ERROR COMPARING HASH, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
+                    .catch(() => {
+                        return res.render("main", {
+                            layout: "login",
+                            checkData: true,
+                        });
+                    });
+            }
+            // IF E-MAIL NOT FOUND, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
+            else {
+                return res.render("main", {
+                    layout: "login",
+                    checkData: true,
                 });
-        } else {
-            res.redirect("/login");
-        }
-    });
+            }
+        })
+        // IF ERROR QUERYING FROM DB, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA (?)
+        .catch(() => {
+            return res.render("main", {
+                layout: "login",
+                checkData: true,
+            });
+        });
 });
-
+//
+//
+// GET '/LOGOUT'
+// RESET COOKIES AND REDIRECT TO '/LOGIN'
 app.get("/logout", (req, res) => {
     req.session = null;
-    return res.redirect("/");
+    return res.redirect("/login");
 });
-
+// ===== ROUTES ===== //
+//
+//
+// ======= SERVER LISTENER ======= //
 app.listen(port);
+// ======= SERVER LISTENER ======= //

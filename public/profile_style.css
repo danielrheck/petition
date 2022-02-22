@@ -70,3 +70,7 @@ button {
     position: relative;
     top: 6vh;
 }
+
+.error {
+    color: red;
+}

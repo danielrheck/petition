@@ -1,4 +1,7 @@
 
+ -- START DB
+    sudo service postgresql start
+ 
  -- drop existing tables
 DROP TABLE IF EXISTS signatures;
 DROP TABLE IF EXISTS users;
@@ -32,10 +35,3 @@ CREATE TABLE user_profiles (
 );
     
 
-
-SELECT firstname, lastname, age, city, url 
-FROM users
-INNER JOIN signatures 
-ON users.id = signatures.user_id
-FULL OUTER JOIN user_profiles 
-ON users.id = user_profiles.user_id;
