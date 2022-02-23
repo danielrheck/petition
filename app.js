@@ -16,6 +16,9 @@ const {
     addUserProfile,
     getSignaturesByCity,
     getUserData,
+    updateProfile,
+    updateUserWithPassword,
+    updateUsersWithoutPassword,
 } = require("./database/db");
 // BCRYPT FUNCTIONS
 const { compare, hash } = require("./database/db");
@@ -372,7 +375,6 @@ app.get("/logout", (req, res) => {
     req.session = null;
     return res.redirect("/login");
 });
-// ===== ROUTES ===== //
 //
 //
 //
@@ -392,6 +394,95 @@ app.get("/edit", (req, res) => {
             });
     }
 });
+//
+// POST TO '/EDIT'
+// IF NOT LOGGED IN, REDIRECT TO '/'
+
+app.post("/edit", (req, res) => {
+    // IF NOT LOGGED IN, REDIRECT TO '/'
+    if (!req.session.id) {
+        return res.redirect("/");
+        // IF LOGGED IN
+    } else {
+        // IF NO PASSWORD
+        if (req.body.password == "") {
+            // CHANGE  ALL BUT SIGNATURE
+            updateUsersWithoutPassword(
+                req.session.id,
+                req.body.firstname,
+                req.body.lastname,
+                req.body.email
+            )
+                .then(() => {
+                    if (
+                        !req.body.url.startsWith("http://") &&
+                        !req.body.url.startsWith("https://")
+                    ) {
+                        req.body.url = "";
+                    }
+                    // CHANGE OTHER FIELDS AND REDIRECT
+                    updateProfile(
+                        req.session.id,
+                        req.body.age,
+                        req.body.city,
+                        req.body.url
+                    )
+                        .then(() => {
+                            console.log("USER UPDATED WITH NO PW");
+                            res.redirect("/");
+                        })
+                        .catch((e) => {
+                            console.log("Error updating user: ", e);
+                            res.redirect("/");
+                        });
+                })
+                .catch((e) => {
+                    console.log("Error updating user: ", e);
+                    res.redirect("/");
+                });
+        } else {
+            // HASH PASSWORD AND SAVE ALL FIELDS
+            hash(req.body.password)
+                .then((hashedPassword) => {
+                    updateUserWithPassword(
+                        req.session.id,
+                        req.body.firstname,
+                        req.body.lastname,
+                        req.body.email,
+                        hashedPassword
+                    )
+                        .then(() => {
+                            updateProfile(
+                                req.session.id,
+                                req.body.age,
+                                req.body.city,
+                                req.body.url
+                            )
+                                .then(() => {
+                                    console.log("USER UPDATED WITH PW");
+                                    return res.redirect("/");
+                                })
+                                .catch((e) => {
+                                    console.log("Error updating profile: ", e);
+                                    return res.redirect("/");
+                                });
+                        })
+                        .catch((e) => {
+                            console.log(
+                                "Error updating user with password change: ",
+                                e
+                            );
+                            return res.redirect("/");
+                        });
+                })
+                .catch((e) => {
+                    console.log("Error hashing PW: ", e);
+                    return res.redirect("/");
+                });
+        }
+    }
+});
+// ===== ROUTES ===== //
 //
 // ======= SERVER LISTENER ======= //
 app.listen(process.env.PORT || port);

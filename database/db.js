@@ -139,6 +139,53 @@ WHERE users.id = $1`,
     );
 };
 
+module.exports.updateUsersWithoutPassword = function (
+    id,
+    firstname,
+    lastname,
+    email
+) {
+    return db.query(
+        `
+        UPDATE users
+        SET firstname = $2, lastname = $3, email = $4
+        WHERE users.id = $1
+    `,
+        [id, firstname, lastname, email]
+    );
+};
+
+module.exports.updateUserWithPassword = function (
+    id,
+    firstname,
+    lastname,
+    email,
+    hashedPassword
+) {
+    return db.query(
+        `
+                    UPDATE users
+        SET firstname = $2, lastname = $3, email = $4, password = $5
+        WHERE users.id = $1
+            `,
+        [id, firstname, lastname, email, hashedPassword]
+    );
+};
+
+module.exports.updateProfile = function (user_id, age, city, url) {
+    return db.query(
+        `
+    
+        INSERT INTO user_profiles (user_id, age, city, url)
+        VALUES($1, $2, $3, $4)
+        ON CONFLICT (user_id)
+        DO UPDATE SET age = $2, city = $3, url = $4
+    
+    `,
+        [user_id, age, city, url]
+    );
+};
+
 // var getUserData = function (id) {
 //     return db.query(
 //         `SELECT users.firstname, users.lastname, users.email, user_profiles.age, user_profiles.city, user_profiles.url
@@ -341,3 +388,45 @@ WHERE users.id = $1`,
 // let returned = returnAs(1);
 
 // console.log(returned);
+
+var updateUsersWithoutPassword = function (id, firstname, lastname, email) {
+    return db.query(
+        `
+        UPDATE users
+        SET firstname = $2, lastname = $3, email = $4
+        WHERE users.id = $1
+    `,
+        [id, firstname, lastname, email]
+    );
+};
+
+var updateUserWithPassword = function (
+    id,
+    firstname,
+    lastname,
+    email,
+    hashedPassword
+) {
+    return db.query(
+        `
+                    UPDATE users
+        SET firstname = $2, lastname = $3, email = $4, password = $5
+        WHERE users.id = $1
+            `,
+        [id, firstname, lastname, email, hashedPassword]
+    );
+};
+
+var updateProfile = function (user_id, age, city, url) {
+    return db.query(
+        `
+    
+        INSERT INTO user_profiles (user_id, age, city, url)
+        VALUES($1, $2, $3, $4)
+        ON CONFLICT (user_id)
+        DO UPDATE SET age = $2, city = $3, url = $4
+    
+    `,
+        [user_id, age, city, url]
+    );
+};
