@@ -15,8 +15,9 @@ const {
     checkProfile,
     addUserProfile,
     getSignaturesByCity,
+    getUserData,
 } = require("./database/db");
-// BCRYPT
+// BCRYPT FUNCTIONS
 const { compare, hash } = require("./database/db");
 // ===== MODULES ===== //
 
@@ -68,7 +69,7 @@ app.get("/petition", (req, res) => {
     }
     // IF LOGGED, CHECK IS USER SIGNED ALREADY
     else {
-        // IF USER HAS SIGNED, REDIRECT TO '/THANKYOU
+        // IF USER HAS SIGNED, REDIRECT TO '/THANKYOU'
         if (req.session.signed) {
             return res.redirect("/thankyou");
         }
@@ -146,7 +147,7 @@ app.post("/profile", (req, res) => {
                 .then(() => {
                     return res.redirect("/thankyou");
                 })
-                // IF ERROR, RE-RENDER THE FORM WITH A MESSAGE OF ERROR (+++MESSAGE STILL TO IMPLEMENT+++)
+                // IF ERROR, RE-RENDER THE FORM WITH A MESSAGE OF ERROR
                 .catch(() => {
                     return res.render("main", {
                         layout: "profile",
@@ -374,6 +375,24 @@ app.get("/logout", (req, res) => {
 // ===== ROUTES ===== //
 //
 //
+//
+app.get("/edit", (req, res) => {
+    // IF NOT LOGGED IN, REDIRECT TO '/'
+    if (!req.session.id) {
+        return res.redirect("/");
+    } else {
+        getUserData(req.session.id)
+            .then(({ rows }) => {
+                let data = rows[0];
+                return res.render("main", { layout: "edit", data: data });
+            })
+            .catch((e) => {
+                console.log("Error retrieving user data from DB: ", e);
+                return res.redirect("/");
+            });
+    }
+});
+//
 // ======= SERVER LISTENER ======= //
-app.listen(port);
+app.listen(process.env.PORT || port);
 // ======= SERVER LISTENER ======= //

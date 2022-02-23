@@ -35,3 +35,8 @@ CREATE TABLE user_profiles (
 );
     
 
+SELECT users.firstname, users.lastname, users.email, user_profiles.age, user_profiles.city, user_profiles.url 
+FROM users 
+LEFT JOIN user_profiles 
+ON users.id = user_profiles.user_id
+WHERE users.id = $1;

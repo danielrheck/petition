@@ -31,14 +31,14 @@
                     City:
                     <input type="text" name="city" />
                 </label>
-                <label class="email">
+                <label class="url">
                     Homepage:
                     <input type="text" name="url" />
                 </label>
                
-                <p class="error">Oops, something went wrong... Care trying again?</p>
+                {{#if oops}}<p class="error">Oops, something went wrong... Care trying again?</p>{{/if}}
 
-                    <button type="submit">Register!</button>
+                    <button type="submit">Send data!</button>
                 </div>
                 
 

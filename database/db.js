@@ -1,5 +1,8 @@
 const spicedPg = require("spiced-pg");
-const db = spicedPg("postgres:postgres:postgres@localhost:5432/signatures");
+const db = spicedPg(
+    process.env.DATABASE_URL ||
+        "postgres:postgres:postgres@localhost:5432/signatures"
+);
 const bcrypt = require("bcryptjs");
 
 exports.hash = (password) => {
@@ -124,6 +127,32 @@ WHERE LOWER(city) = LOWER($1)
         [city]
     );
 };
+
+module.exports.getUserData = function (id) {
+    return db.query(
+        `SELECT users.firstname, users.lastname, users.email, user_profiles.age, user_profiles.city, user_profiles.url 
+FROM users 
+LEFT JOIN user_profiles 
+ON users.id = user_profiles.user_id
+WHERE users.id = $1`,
+        [id]
+    );
+};
+
+// var getUserData = function (id) {
+//     return db.query(
+//         `SELECT users.firstname, users.lastname, users.email, user_profiles.age, user_profiles.city, user_profiles.url
+// FROM users
+// LEFT JOIN user_profiles
+// ON users.id = user_profiles.user_id
+// WHERE users.id = $1`,
+//         [id]
+//     );
+// };
+
+// getUserData(1).then(({ rows }) => {
+//     console.log(rows[0]);
+// });
 
 // var getSignaturesByCity = function (city) {
 //     city;
