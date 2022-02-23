@@ -6,7 +6,7 @@ body {
 }
 
 .signersPageWrap {
-    display: flexbox;
+    display: flex;
     flex-direction: column;
     justify-content: center;
 }
@@ -28,7 +28,7 @@ a,
 
 .thankYou {
     position: relative;
-    bottom: 14vh;
+    bottom: 6vh;
     font-size: 26px;
 }
 .sigContainer {
@@ -39,35 +39,39 @@ a,
 .signatureIMG {
     background-color: rgb(255, 251, 240);
     position: relative;
-    bottom: 20vh;
+    bottom: 14vh;
     padding: 15px;
     border: 2px solid black;
 }
 
 .signedH1 {
     position: relative;
-    bottom: 10vh;
     font-size: 45px;
 }
 
 .listLink {
     position: relative;
-    bottom: 8vh;
     font-size: 28px;
+    bottom: 3vh;
+}
+
+form {
+    display: flex;
+    justify-content: center;
 }
 
 input {
     background: none !important;
     border: none;
     padding: 0 !important;
-    /*optional*/
-    /* font-family: arial, sans-serif; */
-    /*input has OS specific font-family*/
     color: #069;
     text-decoration: underline;
     cursor: pointer;
+    font-size: 25px;
+}
+
+.logout {
     position: relative;
-    bottom: 6vh;
-    left: 35vh;
     font-size: 28px;
+    bottom: 1vh;
 }

@@ -184,7 +184,6 @@ module.exports.updateProfile = function (user_id, age, city, url) {
     `,
         [user_id, age, city, url]
     );
-    console.log;
 };
 
 module.exports.deleteSignature = function (user_id) {
