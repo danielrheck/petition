@@ -184,7 +184,59 @@ module.exports.updateProfile = function (user_id, age, city, url) {
     `,
         [user_id, age, city, url]
     );
+    console.log;
 };
+
+module.exports.deleteSignature = function (user_id) {
+    return db.query(
+        `
+        DELETE FROM signatures
+        WHERE user_id = $1
+
+    `,
+        [user_id]
+    );
+};
+
+module.exports.deleteAccount = function (user_id) {
+    db.query(
+        `
+        
+        DELETE FROM signatures
+        WHERE user_id = $1
+        
+        `,
+        [user_id]
+    )
+        .then(() => {
+            db.query(
+                `
+        
+        DELETE FROM user_profiles
+        WHERE user_id = $1
+        
+        `,
+                [user_id]
+            ).then(() => {
+                return db.query(
+                    `
+        
+        DELETE FROM users
+        WHERE id = $1
+        
+        `,
+                    [user_id]
+                );
+            });
+        })
+        .catch((e) => {
+            console.log("Error deleting account: ", e);
+        });
+};
+
+// deleteSignature(38).then(() => {
+//     console.log("deleted");
+// });
 
 // var getUserData = function (id) {
 //     return db.query(

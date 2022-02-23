@@ -19,6 +19,8 @@ const {
     updateProfile,
     updateUserWithPassword,
     updateUsersWithoutPassword,
+    deleteSignature,
+    deleteAccount,
 } = require("./database/db");
 // BCRYPT FUNCTIONS
 const { compare, hash } = require("./database/db");
@@ -73,6 +75,11 @@ app.get("/petition", (req, res) => {
     // IF LOGGED, CHECK IS USER SIGNED ALREADY
     else {
         // IF USER HAS SIGNED, REDIRECT TO '/THANKYOU'
+        checkSignature(req.session.id).then(({ rows }) => {
+            if (rows[0]) {
+                req.session.signed = true;
+            }
+        });
         if (req.session.signed) {
             return res.redirect("/thankyou");
         }
@@ -101,10 +108,7 @@ app.post("/petition", (req, res) => {
             // IF NOT, SEND THE PETITION AGAIN WITH AN ERROR MESSAGE
             .catch((e) => {
                 console.log("Error inserting in the DB:  ", e);
-                return res.render("main", {
-                    layout: "petition",
-                    dbError: true,
-                });
+                return res.redirect("/");
             });
     }
 });
@@ -179,7 +183,8 @@ app.get("/thankyou", (req, res) => {
         // CHECK IF USER SIGNED ALREADY
         checkSignature(id).then(({ rows }) => {
             // IF SIGNED, RENDER THE THANKYOU PAGE PASSING THE SIGNATURE
-            if (req.session.signed) {
+            if (rows[0]) {
+                req.session.signed = true;
                 var signature = rows[0].signature;
                 return res.render("main", {
                     layout: "thankyou",
@@ -331,9 +336,9 @@ app.post("/login", (req, res) => {
                                 if (rows[0]) {
                                     req.session.signed = true;
                                 }
+                                // REDIRECT TO '/'
+                                res.redirect("/");
                             });
-                            // REDIRECT TO '/'
-                            res.redirect("/");
                         }
                         // IF PASSWORD IS INCORRECT, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
                         else {
@@ -452,6 +457,12 @@ app.post("/edit", (req, res) => {
                         hashedPassword
                     )
                         .then(() => {
+                            if (
+                                !req.body.url.startsWith("http://") &&
+                                !req.body.url.startsWith("https://")
+                            ) {
+                                req.body.url = "";
+                            }
                             updateProfile(
                                 req.session.id,
                                 req.body.age,
@@ -480,6 +491,30 @@ app.post("/edit", (req, res) => {
                     return res.redirect("/");
                 });
         }
+    }
+});
+//
+// POST TO '/THANKYOU'
+// THIS IS THE DELETE SIGNATURE
+app.post("/thankyou", (req, res) => {
+    if (!req.session.id) {
+        return res.redirect("/");
+    }
+    if (req.body.deleteSignature) {
+        req.session.signed = false;
+        deleteSignature(req.session.id)
+            .then(() => {
+                return res.redirect("/");
+            })
+            .catch(() => {
+                req.session.signed = true;
+                return res.redirect("/thankyou");
+            });
+    } else if (req.body.deleteAccount) {
+        let id = req.session.id;
+        req.session = null;
+        deleteAccount(id);
+        return res.redirect("/");
     }
 });
 // ===== ROUTES ===== //

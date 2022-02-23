@@ -40,3 +40,9 @@ FROM users
 LEFT JOIN user_profiles 
 ON users.id = user_profiles.user_id
 WHERE users.id = $1;
+
+users 34 32
+sig 27 26
+profile 20 18
+
+

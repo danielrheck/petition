@@ -55,3 +55,19 @@ a,
     bottom: 8vh;
     font-size: 28px;
 }
+
+input {
+    background: none !important;
+    border: none;
+    padding: 0 !important;
+    /*optional*/
+    /* font-family: arial, sans-serif; */
+    /*input has OS specific font-family*/
+    color: #069;
+    text-decoration: underline;
+    cursor: pointer;
+    position: relative;
+    bottom: 6vh;
+    left: 35vh;
+    font-size: 28px;
+}
