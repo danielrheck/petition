@@ -1,0 +1,65 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>sdasdasd</title>
+        <link rel="stylesheet" href="edit_style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Jura:wght@300&family=Titillium+Web:wght@200;400&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+
+    <body>
+
+        <img src="pasta-draw.png" class="pasta-draw" alt="" srcset="" />
+
+
+        <p class="petitionText">Tell us more about yourself...</b>.
+        </p>
+
+        <div class="formContainer">
+            <form method="POST" class="editForm">
+                <label class="firstname">
+                    First Name: 
+                    <input type="text" name="firstname" value="{{data.firstname}}"/>
+                </label>
+                <label class="lastname">
+                    Last Name:
+                    <input type="text" name="lastname" value="{{data.lastname}}"/>
+                </label>
+                <label class="email">
+                    E-mail:
+                    <input type="text" name="email" value="{{data.email}}"/>
+                </label>
+                <label class="password">
+                    Password:
+                    <input type="password" name="password" />
+                </label>
+                <label class="age">
+                    Age:
+                    <input type="text" name="age" value="{{data.age}}"/>
+                </label>
+                <label class="city">
+                    City:
+                    <input type="text" name="city" value="{{data.city}}"/>
+                </label>
+                <label class="url">
+                    URL:
+                    <input type="text" name="url" value="{{data.url}}"/>
+                </label>
+               
+                {{#if oops}}<p class="error">Oops, something went wrong... Care trying again?</p>{{/if}}
+                    <button type="submit">Update!</button>
+                </div>
+                
+
+            </form>
+        </div>
+
+    </body>
+
+</html>
