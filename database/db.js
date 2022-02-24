@@ -101,12 +101,13 @@ module.exports.checkSignature = function (user_id) {
 module.exports.getAllSignatures = function () {
     return db.query(
         `
-    SELECT firstname, lastname, age, city, url 
+    SELECT users.firstname, users.lastname, user_profiles.age, user_profiles.city, user_profiles.url 
 FROM users
 INNER JOIN signatures 
 ON users.id = signatures.user_id
 FULL OUTER JOIN user_profiles 
 ON users.id = user_profiles.user_id
+ORDER BY users.id
     `
     );
 };
@@ -440,44 +441,57 @@ module.exports.deleteAccount = function (user_id) {
 
 // console.log(returned);
 
-var updateUsersWithoutPassword = function (id, firstname, lastname, email) {
-    return db.query(
-        `
-        UPDATE users
-        SET firstname = $2, lastname = $3, email = $4
-        WHERE users.id = $1
-    `,
-        [id, firstname, lastname, email]
-    );
-};
+// var updateUsersWithoutPassword = function (id, firstname, lastname, email) {
+//     return db.query(
+//         `
+//         UPDATE users
+//         SET firstname = $2, lastname = $3, email = $4
+//         WHERE users.id = $1
+//     `,
+//         [id, firstname, lastname, email]
+//     );
+// };
 
-var updateUserWithPassword = function (
-    id,
-    firstname,
-    lastname,
-    email,
-    hashedPassword
-) {
-    return db.query(
-        `
-                    UPDATE users
-        SET firstname = $2, lastname = $3, email = $4, password = $5
-        WHERE users.id = $1
-            `,
-        [id, firstname, lastname, email, hashedPassword]
-    );
-};
+// var updateUserWithPassword = function (
+//     id,
+//     firstname,
+//     lastname,
+//     email,
+//     hashedPassword
+// ) {
+//     return db.query(
+//         `
+//                     UPDATE users
+//         SET firstname = $2, lastname = $3, email = $4, password = $5
+//         WHERE users.id = $1
+//             `,
+//         [id, firstname, lastname, email, hashedPassword]
+//     );
+// };
 
-var updateProfile = function (user_id, age, city, url) {
-    return db.query(
-        `
-    
-        INSERT INTO user_profiles (user_id, age, city, url)
-        VALUES($1, $2, $3, $4)
-        ON CONFLICT (user_id)
-        DO UPDATE SET age = $2, city = $3, url = $4
-    
-    `,
-        [user_id, age, city, url]
-    );
-};
+// var updateProfile = function (user_id, age, city, url) {
+//     return db.query(
+//         `
+
+//         INSERT INTO user_profiles (user_id, age, city, url)
+//         VALUES($1, $2, $3, $4)
+//         ON CONFLICT (user_id)
+//         DO UPDATE SET age = $2, city = $3, url = $4
+
+//     `,
+//         [user_id, age, city, url]
+//     );
+// };
+
+// var count = function () {
+//     db.query(
+//         `
+
+//         SELECT * FROM signatures;
+//     `
+//     ).then(({ rows }) => {
+//         console.log(rows.length);
+//     });
+// };
+
+// count();

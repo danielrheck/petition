@@ -5,25 +5,24 @@ const { engine } = require("express-handlebars");
 const cookieSession = require("cookie-session");
 const path = require("path");
 // DB FUNCTIONS
+const { checkSignature, checkProfile } = require("./database/db");
 const {
-    addUsername,
-    addSignature,
-    dataValidation,
-    getAllSignatures,
-    getPasswordAndIdByEmail,
-    checkSignature,
-    checkProfile,
-    addUserProfile,
-    getSignaturesByCity,
-    getUserData,
-    updateProfile,
-    updateUserWithPassword,
-    updateUsersWithoutPassword,
-    deleteSignature,
-    deleteAccount,
-} = require("./database/db");
-// BCRYPT FUNCTIONS
-const { compare, hash } = require("./database/db");
+    requireLoggedUser,
+    requireSignedUser,
+    requireLoggedOutUser,
+    requireUnsignedUser,
+} = require("./routes_middlewares");
+const {
+    postProfile,
+    addSign,
+    registerUser,
+    login,
+    editProfile,
+    deleteSignatureOrAccount,
+    getCity,
+    getSigners,
+    getEdit,
+} = require("./routes_functions");
 // ===== MODULES ===== //
 
 // ===== SERVER ===== //
@@ -64,202 +63,65 @@ if (process.env.NODE_ENV == "production") {
 // ===== ROUTES ===== //
 //
 // GET '/'
-app.get("/", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/LOGIN'
-    if (!req.session.id) {
-        return res.redirect("/login");
-    }
-    // IF LOGGED, REDIRECT TO '/PETITION'
-    else {
-        return res.redirect("/petition");
-    }
+app.get("/", requireLoggedUser, (req, res) => {
+    return res.redirect("/petition");
 });
 //
 //
 // GET '/PETITION'
-app.get("/petition", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    // IF LOGGED, CHECK IS USER SIGNED ALREADY
-    else {
-        // IF USER HAS SIGNED, REDIRECT TO '/THANKYOU'
-        checkSignature(req.session.id).then(({ rows }) => {
-            if (rows[0]) {
-                req.session.signed = true;
-            }
-        });
-        if (req.session.signed) {
-            return res.redirect("/thankyou");
-        }
-        // IF USER HAS NOT SIGNED, PRESENT THE PETITION FOR THE USER TO SIGN
-        else {
-            return res.render("main", { layout: "petition" });
-        }
-    }
+app.get("/petition", requireLoggedUser, requireUnsignedUser, (req, res) => {
+    return res.render("main", { layout: "petition" });
 });
 //
 //
 // POST '/PETITION'
-app.post("/petition", (req, res) => {
-    // RECEIVES THE FORM DATA AND CHECK IF USER SIGNED
-    if (req.body.Signature == "") {
-        // IF SIGNATURE IS EMPTY, SEND THE FORM BACK WITH MESSAGE ERROR
-        return res.render("main", { layout: "petition", invalid: true });
-    } else {
-        // IF THE USER SIGNED, ADD THE SIGNATURE TO THE SINATURES TABLE
-        addSignature(req.session.id, req.body.Signature)
-            // IF ADDED SUCCESSFULLY, SET SIGNED COOKIE TO TRUE REDIRECT TO 'THANKYOU'
-            .then(() => {
-                req.session.signed = true;
-                return res.redirect(`/thankyou`);
-            })
-            // IF NOT, SEND THE PETITION AGAIN WITH AN ERROR MESSAGE
-            .catch((e) => {
-                console.log("Error inserting in the DB:  ", e);
-                return res.redirect("/");
-            });
-    }
+app.post("/petition", requireLoggedUser, requireUnsignedUser, (req, res) => {
+    addSign(req, res);
 });
 //
 //
 // GET '/PROFILE'
-app.get("/profile", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    // IF LOGGED IN, CHECK IF PROFILE WAS SENT ALREADY
-    else {
-        checkProfile(req.session.id).then(({ rows }) => {
-            // IF WAS SENT, REDIRECT TO '/'
-            if (rows[0]) {
-                return res.redirect("/");
-            }
-            // IF USER DIDN'T SEND IT, PRESENT THE PROFILE FORM
-            else {
-                return res.render("main", { layout: "profile" });
-            }
-        });
-    }
+app.get("/profile", requireLoggedUser, (req, res) => {
+    checkProfile(req.session.id).then(({ rows }) => {
+        // IF WAS SENT, REDIRECT TO '/'
+        if (rows[0]) {
+            return res.redirect("/");
+        }
+        // IF USER DIDN'T SEND IT, PRESENT THE PROFILE FORM
+        else {
+            return res.render("main", { layout: "profile" });
+        }
+    });
 });
 //
 //
 // POST '/PROFILE'
-app.post("/profile", (req, res) => {
-    let user_id = req.session.id;
-    let { age, city, url } = req.body;
-    // IF ALL FIELDS ARE LEFT BLANK, REDIRECT TO '/PETITION'
-    if (!user_id && !age && !city && !url) {
-        res.redirect("/petition");
-    }
-    // IF THERE IS SOMETHING IN THE FORM RESPONSE
-    else {
-        // CHECK IF URL STARTS WITH 'HTTPS' OR 'HTTP'
-        if (url.startsWith("http://") || url.startsWith("https://")) {
-            // IF STARTS, ADD IT TO THE DB
-            addUserProfile(user_id, age, city, url)
-                // IF ADDED SUCCESSFULLY, REDIRECT TO '/THANKYOU'
-                .then(() => {
-                    return res.redirect("/thankyou");
-                })
-                // IF ERROR, RE-RENDER THE FORM WITH A MESSAGE OF ERROR
-                .catch(() => {
-                    return res.render("main", {
-                        layout: "profile",
-                        oops: true,
-                    });
-                });
-        } else {
-            // IF URL DOESNT START WITH 'HTTPS' OR 'HTTP', ADD TO THE DATABASE WITH AN EMPTY URL REPLACING IT
-            addUserProfile(user_id, age, city, "").then(() => {
-                return res.redirect("/thankyou");
-            });
-        }
-    }
+app.post("/profile", requireLoggedUser, (req, res) => {
+    postProfile(req, res);
 });
 //
 //
 // GET '/THANKYOU'
-app.get("/thankyou", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    // IF LOGGED IN
-    else {
-        let id = req.session.id;
-        // CHECK IF USER SIGNED ALREADY
-        checkSignature(id).then(({ rows }) => {
-            // IF SIGNED, RENDER THE THANKYOU PAGE PASSING THE SIGNATURE
-            if (rows[0]) {
-                req.session.signed = true;
-                var signature = rows[0].signature;
-                return res.render("main", {
-                    layout: "thankyou",
-                    signature: signature,
-                });
-            }
-            // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
-            else {
-                return res.redirect("/petition");
-            }
+app.get("/thankyou", requireLoggedUser, requireSignedUser, (req, res) => {
+    checkSignature(req.session.id).then(({ rows }) => {
+        let signature = rows[0].signature;
+        return res.render("main", {
+            layout: "thankyou",
+            signature: signature,
         });
-    }
+    });
 });
 //
 //
 // GET '/SIGNED'
-app.get("/signed", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    // IF LOGGED IN, CHECK SIGNATURE
-    else {
-        // IF SIGNED, RENDER THE SIGNED PAGE PASSING ALL SIGNERS
-        if (req.session.signed) {
-            getAllSignatures().then(({ rows }) => {
-                let allSigners = rows;
-                return res.render("main", {
-                    layout: "signed",
-                    allSigners: allSigners,
-                });
-            });
-        }
-        // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
-        else {
-            return res.redirect("/petition");
-        }
-    }
+app.get("/signed", requireLoggedUser, requireSignedUser, (req, res) => {
+    getSigners(req, res);
 });
 //
 //
 // GET TO '/SIGNED/:CITY'
-app.get("/signed/:city", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    // IF LOGGED IN, CHECK SIGNATURE
-    else {
-        // IF SIGNED, RENDER THE THANKYOU PAGE PASSING THE SIGNERS LIST FOR THE CITY
-        if (req.session.signed) {
-            getSignaturesByCity(req.params.city).then(({ rows }) => {
-                let allSigners = rows;
-                return res.render("main", {
-                    layout: "city",
-                    allSigners: allSigners,
-                    city: req.params.city,
-                });
-            });
-        }
-        // IF DIDN'T SIGN, REDIRECT TO '/PETITION'
-        else {
-            return res.redirect("/petition");
-        }
-    }
+app.get("/signed/:city", requireLoggedUser, requireSignedUser, (req, res) => {
+    getCity(req, res);
 });
 //
 //
@@ -273,114 +135,20 @@ app.get("/register", (req, res) => {
 //
 //
 // POST TO '/REGISTER'
-app.post("/register", (req, res) => {
-    let { firstname, lastname, email, password } = req.body;
-    // CHECK IF ALL FIELDS WERE SENT
-    if (dataValidation(firstname, lastname, email, password)) {
-        // IF SO, HASH THE PASSWORD
-        hash(password)
-            .then((hashedPassword) => {
-                // THEN ADD USER TO USERS DB
-                addUsername(firstname, lastname, email, hashedPassword)
-                    // THE REDIRECT TO PROFILE PAGE
-                    .then(({ rows }) => {
-                        let user_id = rows[0].id;
-                        req.session.id = user_id;
-                        return res.redirect("/profile");
-                    })
-                    // IF ERROR ADDING TO DB, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
-                    .catch(() => {
-                        return res.render("main", {
-                            layout: "register",
-                            checkData: true,
-                        });
-                    });
-            })
-            // IF ERROR HASHING, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
-            .catch(() => {
-                return res.render("main", {
-                    layout: "register",
-                    checkData: true,
-                });
-            });
-    } else {
-        // IF DATA INVALID, RE-RENDER THE REGISTER FORM WITH A FAULTY DATA MESSAGE
-        res.render("main", {
-            layout: "register",
-            checkData: true,
-        });
-    }
+app.post("/register", requireLoggedOutUser, (req, res) => {
+    registerUser(req, res);
 });
 //
 //
 // GET '/LOGIN'
-app.get("/login", (req, res) => {
-    // IF USER IS LOGGED IN, REDIRECT TO '/'
-    if (req.session.id) {
-        return res.redirect("/");
-    }
-    // IF IS NOT LOGGED IN, RENDER LOGIN PAGE
-    else {
-        return res.render("main", { layout: "login" });
-    }
+app.get("/login", requireLoggedOutUser, (req, res) => {
+    return res.render("main", { layout: "login" });
 });
 //
 //
 // POST '/LOGIN'
-app.post("/login", (req, res) => {
-    // GET THE HASHED PASSWORD AND ID BY EMAIL
-    getPasswordAndIdByEmail(req.body.email)
-        .then(({ rows }) => {
-            // IF EMAIL REGISTERED, SET ID TO THE ONE RETURNED FROM THE QUERY
-            if (rows[0]) {
-                let id = rows[0].id;
-                // COMPARE HASH WITH PROVIDED PASSWORD
-                compare(req.body.password, rows[0].password)
-                    .then((check) => {
-                        // IF PASSWORD IS CORRECT, SET COOKIE WITH THE ID
-                        if (check) {
-                            req.session.id = id;
-                            // CHECK USER SIGNED
-                            checkSignature(id).then(({ rows }) => {
-                                // IF SO, SET SIGNED COOKIE TO TRUE
-                                if (rows[0]) {
-                                    req.session.signed = true;
-                                }
-                                // REDIRECT TO '/'
-                                res.redirect("/");
-                            });
-                        }
-                        // IF PASSWORD IS INCORRECT, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
-                        else {
-                            return res.render("main", {
-                                layout: "login",
-                                checkData: true,
-                            });
-                        }
-                    })
-                    // IF ERROR COMPARING HASH, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
-                    .catch(() => {
-                        return res.render("main", {
-                            layout: "login",
-                            checkData: true,
-                        });
-                    });
-            }
-            // IF E-MAIL NOT FOUND, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA
-            else {
-                return res.render("main", {
-                    layout: "login",
-                    checkData: true,
-                });
-            }
-        })
-        // IF ERROR QUERYING FROM DB, RENDER THE LOGIN PAGE AGAIN WITH A MESSAGE TO CHECK THE DATA (?)
-        .catch(() => {
-            return res.render("main", {
-                layout: "login",
-                checkData: true,
-            });
-        });
+app.post("/login", requireLoggedOutUser, (req, res) => {
+    login(req, res);
 });
 //
 //
@@ -393,139 +161,21 @@ app.get("/logout", (req, res) => {
 //
 //
 //
-app.get("/edit", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-    } else {
-        getUserData(req.session.id)
-            .then(({ rows }) => {
-                let data = rows[0];
-                return res.render("main", { layout: "edit", data: data });
-            })
-            .catch((e) => {
-                console.log("Error retrieving user data from DB: ", e);
-                return res.redirect("/");
-            });
-    }
+app.get("/edit", requireLoggedUser, (req, res) => {
+    getEdit(req, res);
 });
 //
 // POST TO '/EDIT'
 // IF NOT LOGGED IN, REDIRECT TO '/'
 
-app.post("/edit", (req, res) => {
-    // IF NOT LOGGED IN, REDIRECT TO '/'
-    if (!req.session.id) {
-        return res.redirect("/");
-        // IF LOGGED IN
-    } else {
-        // IF NO PASSWORD
-        if (req.body.password == "") {
-            // CHANGE  ALL BUT SIGNATURE
-            updateUsersWithoutPassword(
-                req.session.id,
-                req.body.firstname,
-                req.body.lastname,
-                req.body.email
-            )
-                .then(() => {
-                    if (
-                        !req.body.url.startsWith("http://") &&
-                        !req.body.url.startsWith("https://")
-                    ) {
-                        req.body.url = "";
-                    }
-                    // CHANGE OTHER FIELDS AND REDIRECT
-                    updateProfile(
-                        req.session.id,
-                        req.body.age,
-                        req.body.city,
-                        req.body.url
-                    )
-                        .then(() => {
-                            console.log("USER UPDATED WITH NO PW");
-                            res.redirect("/");
-                        })
-                        .catch((e) => {
-                            console.log("Error updating user: ", e);
-                            res.redirect("/");
-                        });
-                })
-                .catch((e) => {
-                    console.log("Error updating user: ", e);
-                    res.redirect("/");
-                });
-        } else {
-            // HASH PASSWORD AND SAVE ALL FIELDS
-            hash(req.body.password)
-                .then((hashedPassword) => {
-                    updateUserWithPassword(
-                        req.session.id,
-                        req.body.firstname,
-                        req.body.lastname,
-                        req.body.email,
-                        hashedPassword
-                    )
-                        .then(() => {
-                            if (
-                                !req.body.url.startsWith("http://") &&
-                                !req.body.url.startsWith("https://")
-                            ) {
-                                req.body.url = "";
-                            }
-                            updateProfile(
-                                req.session.id,
-                                req.body.age,
-                                req.body.city,
-                                req.body.url
-                            )
-                                .then(() => {
-                                    console.log("USER UPDATED WITH PW");
-                                    return res.redirect("/");
-                                })
-                                .catch((e) => {
-                                    console.log("Error updating profile: ", e);
-                                    return res.redirect("/");
-                                });
-                        })
-                        .catch((e) => {
-                            console.log(
-                                "Error updating user with password change: ",
-                                e
-                            );
-                            return res.redirect("/");
-                        });
-                })
-                .catch((e) => {
-                    console.log("Error hashing PW: ", e);
-                    return res.redirect("/");
-                });
-        }
-    }
+app.post("/edit", requireLoggedUser, (req, res) => {
+    editProfile(req, res);
 });
 //
 // POST TO '/THANKYOU'
 // THIS IS THE DELETE SIGNATURE
-app.post("/thankyou", (req, res) => {
-    if (!req.session.id) {
-        return res.redirect("/");
-    }
-    if (req.body.deleteSignature) {
-        req.session.signed = false;
-        deleteSignature(req.session.id)
-            .then(() => {
-                return res.redirect("/");
-            })
-            .catch(() => {
-                req.session.signed = true;
-                return res.redirect("/thankyou");
-            });
-    } else if (req.body.deleteAccount) {
-        let id = req.session.id;
-        req.session = null;
-        deleteAccount(id);
-        return res.redirect("/");
-    }
+app.post("/thankyou", requireLoggedUser, (req, res) => {
+    deleteSignatureOrAccount(req, res);
 });
 // ===== ROUTES ===== //
 //
