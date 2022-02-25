@@ -4,27 +4,22 @@ const helmet = require("helmet");
 const { engine } = require("express-handlebars");
 const cookieSession = require("cookie-session");
 const path = require("path");
-// DB FUNCTIONS
-const { checkSignature, checkProfile } = require("./database/db");
-const {
-    requireLoggedUser,
-    requireSignedUser,
-    requireLoggedOutUser,
-    requireUnsignedUser,
-} = require("./routes_middlewares");
-const {
-    postProfile,
-    addSign,
-    registerUser,
-    login,
-    editProfile,
-    deleteSignatureOrAccount,
-    getCity,
-    getSigners,
-    getEdit,
-} = require("./routes_functions");
+const { requireLoggedUser } = require("./routes_middlewares");
+//
+//
+// EXPRESS ROUTES
+const cityRoute = require("./routes/city");
+const editRoute = require("./routes/edit");
+const loginRoute = require("./routes/login");
+const logoutRoute = require("./routes/logout");
+const petitionRoute = require("./routes/petition");
+const profileRoute = require("./routes/profile");
+const registerRoute = require("./routes/register");
+const signedRoute = require("./routes/signed");
+const thankyouRoute = require("./routes/thankyou");
 // ===== MODULES ===== //
-
+//
+//
 // ===== SERVER ===== //
 const app = express();
 const port = 8080;
@@ -46,6 +41,7 @@ app.use(
         name: "session",
         secret: "Vai Corinthians!",
         maxAge: 14 * 24 * 60 * 60 * 1000,
+        sameSite: true,
     })
 );
 //
@@ -66,117 +62,17 @@ if (process.env.NODE_ENV == "production") {
 app.get("/", requireLoggedUser, (req, res) => {
     return res.redirect("/petition");
 });
-//
-//
-// GET '/PETITION'
-app.get("/petition", requireLoggedUser, requireUnsignedUser, (req, res) => {
-    return res.render("main", { layout: "petition" });
-});
-//
-//
-// POST '/PETITION'
-app.post("/petition", requireLoggedUser, requireUnsignedUser, (req, res) => {
-    addSign(req, res);
-});
-//
-//
-// GET '/PROFILE'
-app.get("/profile", requireLoggedUser, (req, res) => {
-    checkProfile(req.session.id).then(({ rows }) => {
-        // IF WAS SENT, REDIRECT TO '/'
-        if (rows[0]) {
-            return res.redirect("/");
-        }
-        // IF USER DIDN'T SEND IT, PRESENT THE PROFILE FORM
-        else {
-            return res.render("main", { layout: "profile" });
-        }
-    });
-});
-//
-//
-// POST '/PROFILE'
-app.post("/profile", requireLoggedUser, (req, res) => {
-    postProfile(req, res);
-});
-//
-//
-// GET '/THANKYOU'
-app.get("/thankyou", requireLoggedUser, requireSignedUser, (req, res) => {
-    checkSignature(req.session.id).then(({ rows }) => {
-        let signature = rows[0].signature;
-        return res.render("main", {
-            layout: "thankyou",
-            signature: signature,
-        });
-    });
-});
-//
-//
-// GET '/SIGNED'
-app.get("/signed", requireLoggedUser, requireSignedUser, (req, res) => {
-    getSigners(req, res);
-});
-//
-//
-// GET TO '/SIGNED/:CITY'
-app.get("/signed/:city", requireLoggedUser, requireSignedUser, (req, res) => {
-    getCity(req, res);
-});
-//
-//
-// GET TO '/REGISTER'
-app.get("/register", (req, res) => {
-    // CLEAN COOKIES
-    req.session = null;
-    // RENDER REGISTER PAGE
-    return res.render("main", { layout: "register" });
-});
-//
-//
-// POST TO '/REGISTER'
-app.post("/register", requireLoggedOutUser, (req, res) => {
-    registerUser(req, res);
-});
-//
-//
-// GET '/LOGIN'
-app.get("/login", requireLoggedOutUser, (req, res) => {
-    return res.render("main", { layout: "login" });
-});
-//
-//
-// POST '/LOGIN'
-app.post("/login", requireLoggedOutUser, (req, res) => {
-    login(req, res);
-});
-//
-//
-// GET '/LOGOUT'
-// RESET COOKIES AND REDIRECT TO '/LOGIN'
-app.get("/logout", (req, res) => {
-    req.session = null;
-    return res.redirect("/login");
-});
-//
-//
-//
-app.get("/edit", requireLoggedUser, (req, res) => {
-    getEdit(req, res);
-});
-//
-// POST TO '/EDIT'
-// IF NOT LOGGED IN, REDIRECT TO '/'
+// ROUTES MIDDLEWARE
+app.use(cityRoute);
+app.use(editRoute);
+app.use(loginRoute);
+app.use(logoutRoute);
+app.use(petitionRoute);
+app.use(profileRoute);
+app.use(registerRoute);
+app.use(signedRoute);
+app.use(thankyouRoute);
 
-app.post("/edit", requireLoggedUser, (req, res) => {
-    editProfile(req, res);
-});
-//
-// POST TO '/THANKYOU'
-// THIS IS THE DELETE SIGNATURE
-app.post("/thankyou", requireLoggedUser, (req, res) => {
-    deleteSignatureOrAccount(req, res);
-});
 // ===== ROUTES ===== //
 //
 // ======= SERVER LISTENER ======= //

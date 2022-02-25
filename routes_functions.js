@@ -281,7 +281,7 @@ module.exports.getCity = function (req, res) {
     });
 };
 
-module.exports.getSigns = function (req, res) {
+module.exports.getSigners = function (req, res) {
     getAllSignatures().then(({ rows }) => {
         let allSigners = rows;
         return res.render("main", {
